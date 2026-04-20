@@ -12,6 +12,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@google/genai": "^1.29.0",
     "@hotechann/database": "workspace:*",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",

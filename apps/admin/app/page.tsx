@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8">
@@ -7,9 +9,18 @@ export default function HomePage() {
       <p className="text-neutral-400 text-sm uppercase tracking-widest">
         Painel Admin — ERP/MRP/CRM
       </p>
-      <p className="mt-8 text-neutral-500 text-xs font-mono">
-        MVP 0 — skeleton. Módulos serão conectados aos endpoints da API
-        ({process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}).
+
+      <nav className="mt-10 flex gap-3">
+        <Link
+          href="/mrp"
+          className="px-4 py-2 rounded-md bg-brand text-black text-sm font-semibold"
+        >
+          Simulador MRP →
+        </Link>
+      </nav>
+
+      <p className="mt-12 text-neutral-500 text-xs font-mono">
+        Milestone 1 — Fatia Vertical (Produto + BOM + MRP com IA)
       </p>
     </main>
   );

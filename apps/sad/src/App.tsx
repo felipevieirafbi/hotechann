@@ -6,384 +6,220 @@
 import React, { useState } from 'react';
 import { 
   Server, 
-  Database,
-  FileCode,
-  FolderTree,
-  TerminalSquare
+  Database, 
+  Workflow, 
+  Layers, 
+  Box, 
+  Activity, 
+  Bot,
+  ShieldCheck,
+  Code
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const files = [
-  { id: 'schema', name: 'schema.prisma', path: '/schema.prisma', icon: Database, bg: 'bg-emerald-500/10', color: 'text-emerald-400' },
-  { id: 'docker', name: 'docker-compose.yml', path: '/docker-compose.yml', icon: Server, bg: 'bg-blue-500/10', color: 'text-blue-400' },
-  { id: 'env', name: '.env.example', path: '/.env.example', icon: TerminalSquare, bg: 'bg-yellow-500/10', color: 'text-yellow-400' },
+const sections = [
+  { id: 'overview', title: 'Fatia Vertical', icon: Activity },
+  { id: 'mrp', title: 'Simulador MRP c/ IA', icon: Bot },
+  { id: 'schema', title: 'Contrato IA (JSON)', icon: Code },
 ];
 
 export default function App() {
-  const [activeFile, setActiveFile] = useState(files[0]);
+  const [activeSection, setActiveSection] = useState('overview');
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#EDEDED] font-sans selection:bg-[#00FF00] selection:text-black">
+    <div className="min-h-screen bg-[#0E0E0E] text-[#EDEDED] font-sans selection:bg-[#00FF00] selection:text-black">
       {/* Navbar / Header */}
       <header className="border-b border-[#2A2A2A] bg-[#0A0A0A] px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-sm bg-[#00FF00] flex items-center justify-center">
-            <FolderTree className="w-5 h-5 text-black" />
+            <Server className="w-5 h-5 text-black" />
           </div>
-          <h1 className="text-xl font-medium tracking-tight">Hotechann<span className="text-[#00FF00] font-bold">FAZ</span> Repository</h1>
+          <h1 className="text-xl font-medium tracking-tight">Hotechann<span className="text-[#00FF00] font-bold">FAZ</span> Satélite</h1>
         </div>
         <div className="text-xs font-mono uppercase tracking-widest text-[#7A7A7A]">
-          Monorepo Skeleton Generator
+          SAD - Vertical Slice 1.0
         </div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto flex flex-col md:flex-row h-[calc(100vh-65px)]">
+      <main className="max-w-7xl mx-auto flex flex-col md:flex-row h-[calc(100vh-65px)]">
         {/* Sidebar */}
-        <aside className="w-full md:w-72 border-r border-[#2A2A2A] overflow-y-auto bg-[#141414] p-4">
-          <div className="pb-4 pt-2 border-b border-[#222] mb-4">
-            <span className="text-[10px] font-mono text-[#777] uppercase tracking-wider ml-1">Project Root</span>
-            <div className="mt-2 text-xs font-bold font-mono text-[#DDD]">github.com/felipevieirafbi/hotechann</div>
-          </div>
-          
-          <nav className="space-y-1">
-            {files.map((file) => {
-              const Icon = file.icon;
-              const isActive = activeFile.id === file.id;
+        <aside className="w-full md:w-64 border-r border-[#2A2A2A] overflow-y-auto bg-[#141414]">
+          <nav className="p-4 space-y-1">
+            <div className="pb-4 pt-2">
+              <span className="text-[10px] font-mono text-[#555] uppercase tracking-wider ml-3">Milestone 1</span>
+            </div>
+            {sections.map((sec) => {
+              const Icon = sec.icon;
+              const isActive = activeSection === sec.id;
               return (
                 <button
-                  key={file.id}
-                  onClick={() => setActiveFile(file)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 text-sm font-medium border ${
+                  key={sec.id}
+                  onClick={() => setActiveSection(sec.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 text-sm font-medium ${
                     isActive 
-                      ? 'bg-[#1F1F1F] text-white border-[#333] shadow-sm' 
-                      : 'text-[#A0A0A0] border-transparent hover:bg-[#1A1A1A] hover:text-[#E0E0E0]'
+                      ? 'bg-[#1F1F1F] text-[#00FF00] shadow-[inset_2px_0_0_#00FF00]' 
+                      : 'text-[#A0A0A0] hover:bg-[#1A1A1A] hover:text-[#E0E0E0]'
                   }`}
                 >
-                  <div className={`p-1.5 rounded ${isActive ? file.bg : ''}`}>
-                     <Icon className={`w-4 h-4 ${isActive ? file.color : 'text-[#666]'}`} />
-                  </div>
-                  {file.name}
+                  <Icon className="w-4 h-4" />
+                  {sec.title}
                 </button>
               );
             })}
           </nav>
-          
-          <div className="mt-8 bg-[#1A1A1A] p-4 rounded-xl border border-[#2A2A2A]">
-             <h4 className="text-xs font-bold text-[#00FF00] uppercase font-mono tracking-wider mb-2">Export to GitHub</h4>
-             <p className="text-xs text-[#888] leading-relaxed">
-               Use the platform's settings menu to export these generated files directly as a ZIP or to your GitHub Applet Branch.
-             </p>
+          <div className="mt-8 p-4">
+            <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#2A2A2A]">
+               <h4 className="text-xs font-bold text-[#00FF00] uppercase font-mono tracking-wider mb-2">Engenharia Dividida</h4>
+               <p className="text-[11px] text-[#888] leading-relaxed">
+                 <b>Claude (CLI):</b> Seed db, API NestJS e Next Admin.<br/><br/>
+                 <b>Gemini (Studio):</b> SAD, Prompts MRP e Function Calling contract.
+               </p>
+            </div>
           </div>
         </aside>
 
-        {/* Content Area - Code Viewer */}
-        <section className="flex-1 overflow-hidden flex flex-col bg-[#0E0E0E]">
-           <div className="h-10 bg-[#141414] border-b border-[#2A2A2A] flex items-center px-4 gap-2 text-xs font-mono text-[#888]">
-              <FileCode className="w-4 h-4" />
-              {activeFile.path}
-           </div>
-           
-           <div className="flex-1 overflow-auto p-4 md:p-6 bg-[#0E0E0E]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeFile.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <CodeBlock fileId={activeFile.id} />
-                </motion.div>
-              </AnimatePresence>
-           </div>
+        {/* Content Area */}
+        <section className="flex-1 overflow-y-auto p-8 relative bg-gradient-to-br from-[#0E0E0E] to-[#121212]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSection}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="max-w-4xl"
+            >
+              <ContentRouter id={activeSection} />
+            </motion.div>
+          </AnimatePresence>
         </section>
       </main>
     </div>
   );
 }
 
-function CodeBlock({ fileId }: { fileId: string }) {
-  const content = getCodeContent(fileId);
+function ContentRouter({ id }: { id: string }) {
+  switch (id) {
+    case 'overview': return <OverviewSection />;
+    case 'mrp': return <MRPSection />;
+    case 'schema': return <SchemaSection />;
+    default: return <OverviewSection />;
+  }
+}
+
+function OverviewSection() {
   return (
-    <pre className="font-mono text-sm leading-relaxed text-[#D4D4D4] p-4 bg-[#141414] border border-[#2A2A2A] rounded-lg overflow-x-auto">
-      <code>{content}</code>
-    </pre>
+    <div className="space-y-6">
+      <div className="inline-flex items-center rounded-full border border-[#2A2A2A] bg-[#1A1A1A] px-2.5 py-0.5 text-xs font-semibold text-[#00FF00]">
+        01 / Fatia Vertical (Vertical Slice)
+      </div>
+      <h2 className="text-4xl font-semibold tracking-tight text-white mb-4">Cadastro, BOM & Cálculo MRP</h2>
+      <p className="text-[#A0A0A0] text-lg leading-relaxed mb-8">
+        Vamos focar em entregar ponta-a-ponta a primeira feature core do Satélite. Sem CRUDs genéricos, vamos validar o valor real da plataforma: <b>Calcular a Necessidade Bruta baseado no BOM de Produtos reais.</b>
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { icon: Database, title: '1. O Seed Real', desc: 'Claude injeta no Nest/Prisma 5 produtos de fábrica reais (Ex: Desinfetantes) e suas matérias primas exatas.' },
+          { icon: Workflow, title: '2. Cálculo NestJS', desc: 'API /mrp/requirements. NestJS desmembra o produto em multiníveis do BOM contra o estoque atual.' },
+          { icon: Bot, title: '3. Sugestão IA', desc: 'Se estourar o estoque de MP, IA é chamada no back para justificar e sugerir a Substituição perfeita.' }
+        ].map((feat, i) => (
+          <div key={i} className="p-5 rounded-xl border border-[#2A2A2A] bg-[#141414] hover:border-[#3A3A3A] transition">
+             <div className="w-10 h-10 rounded bg-[#1F1F1F] flex items-center justify-center mb-4">
+               <feat.icon className="w-5 h-5 text-[#00FF00]" />
+             </div>
+             <h3 className="text-white font-medium mb-2 text-sm">{feat.title}</h3>
+             <p className="text-xs text-[#8A8A8A] leading-relaxed">{feat.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-function getCodeContent(id: string) {
-  if (id === 'schema') return `generator client {
-  provider = "prisma-client-js"
+function MRPSection() {
+  return (
+    <div className="space-y-6">
+      <div className="inline-flex items-center rounded-full border border-[#2A2A2A] bg-[#1A1A1A] px-2.5 py-0.5 text-xs font-semibold text-[#00FF00]">
+        02 / Prompt e Lógica do Motor
+      </div>
+      <h2 className="text-4xl font-semibold tracking-tight text-white mb-4">Motor Substitutivo (Gemini)</h2>
+      
+      <div className="bg-[#141414] border border-[#2A2A2A] rounded-xl p-6 mb-6">
+         <h3 className="text-lg text-white font-medium mb-4 flex items-center gap-2">
+            <Bot className="w-5 h-5 text-[#00FF00]" />
+            Prompt de Sistema (O Cérebro da Inteligência Química)
+         </h3>
+         
+         <div className="bg-[#0A0A0A] p-4 rounded border border-[#333] font-mono text-sm text-[#D4D4D4] whitespace-pre-wrap leading-relaxed">
+{`Você é um Engenheiro de Químico Especialista e Analista de MRP na Hotechann Faz.
+Sua missão é atuar como "Safety Net" no processo de Planejamento de Produção.
+
+[CONTEXTO]
+O NestJS acabou de rodar o /mrp/requirements para "Desinfetante Floral 5L".
+A requisição falhou no estoque de "Essência Floral A (UUID: xyz)".
+Temos uma lista de matrizes de substituição cadastradas.
+
+[LÓGICA OPERACIONAL]
+1. Analise o 'shortfall' (déficit de matéria prima).
+2. Busque no payload de opções a essência alternativa homologada.
+3. Considere fatores de conversão (se a Essência B é mais fraca, precisamos de 1.2x).
+4. Acione a função "suggest_mrp_substitution" justificando quimicamente as razões para manter a integridade da receita (FISPQs compatíveis).`}
+         </div>
+      </div>
+    </div>
+  );
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+function SchemaSection() {
+  return (
+    <div className="space-y-6">
+      <div className="inline-flex items-center rounded-full border border-[#2A2A2A] bg-[#1A1A1A] px-2.5 py-0.5 text-xs font-semibold text-[#00FF00]">
+        03 / Contrato Funcional (NestJS x IA)
+      </div>
+      <h2 className="text-4xl font-semibold tracking-tight text-white mb-4">JSON Function Calling</h2>
+      <p className="text-[#A0A0A0] text-sm mb-6">
+        Este é o schema JSON estrito que o Gemini 1.5 Pro será forçado a preencher na reposta e que a API NestJS enviará para o painel Admin do Next.js.
+      </p>
 
-// -----------------------------------------
-// 1. Catálogo e Produtos
-// -----------------------------------------
-
-enum ProductType {
-  FINISHED_GOOD // Produto Acabado (PA)
-  RAW_MATERIAL  // Matéria-Prima (MP)
-  PACKAGING     // Embalagem
-}
-
-model Product {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sku         String      @unique
-  name        String
-  description String?
-  type        ProductType
-  unit        String      @default("L") // L, KG, UN
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relacionamentos
-  formulasAsOutput    BomFormula[]      @relation("FinishedGood")
-  itemsAsComponent    BomItem[]         @relation("RawMaterial")
-  substitutes         BomSubstitution[] @relation("SubstituteMaterial")
-  stockMovements      StockMovement[]
-}
-
-// -----------------------------------------
-// 2. Engenharia: Bill of Materials (BOM)
-// -----------------------------------------
-
-model BomFormula {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  productId      String   @db.Uuid
-  baseYieldQty   Decimal  @db.Decimal(10, 2) // Ex: Rende 1000 Litros
-  version        String   @default("1.0")
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-
-  // Relacionamentos
-  product        Product           @relation("FinishedGood", fields: [productId], references: [id])
-  items          BomItem[]
-  orders         ProductionOrder[]
-}
-
-model BomItem {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bomId          String   @db.Uuid
-  rawMaterialId  String   @db.Uuid
-  requiredQty    Decimal  @db.Decimal(10, 4) // Quantidade base
-
-  // Relacionamentos
-  bomFormula     BomFormula        @relation(fields: [bomId], references: [id])
-  rawMaterial    Product           @relation("RawMaterial", fields: [rawMaterialId], references: [id])
-  substitutions  BomSubstitution[]
-}
-
-model BomSubstitution {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bomItemId            String   @db.Uuid
-  substituteMaterialId String   @db.Uuid
-  conversionFactor     Decimal  @default(1.0) @db.Decimal(10, 4)
-  aiPreferenceScore    Int      @default(50)
-
-  // Relacionamentos
-  bomItem              BomItem  @relation(fields: [bomItemId], references: [id])
-  substituteMaterial   Product  @relation("SubstituteMaterial", fields: [substituteMaterialId], references: [id])
-}
-
-// -----------------------------------------
-// 3. Estoque e Movimentação
-// -----------------------------------------
-
-enum MovementType {
-  IN_PURCHASE
-  IN_PRODUCTION
-  OUT_PRODUCTION
-  OUT_SALE
-  ADJUSTMENT
-}
-
-model StockMovement {
-  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  productId      String       @db.Uuid
-  warehouseId    String       
-  type           MovementType
-  quantity       Decimal      @db.Decimal(10, 4)
-  lotCode        String?      
-  documentRef    String?      
-
-  createdAt      DateTime     @default(now())
-  
-  product        Product      @relation(fields: [productId], references: [id])
-}
-
-// -----------------------------------------
-// 4. Produção (MRP), Traceabilidade e QA
-// -----------------------------------------
-
-enum OrderStatus {
-  PLANNED
-  IN_PROGRESS
-  AWAITING_QA
-  COMPLETED
-  CANCELED
-}
-
-model ProductionOrder {
-  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bomId          String      @db.Uuid
-  status         OrderStatus @default(PLANNED)
-  plannedQty     Decimal     @db.Decimal(10, 2)
-  actualQty      Decimal?    @db.Decimal(10, 2)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  bomFormula     BomFormula  @relation(fields: [bomId], references: [id])
-  lots           ProductionLot[]
-}
-
-model ProductionLot {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  productionOrderId   String   @db.Uuid
-  finalLotCode        String   @unique
-  consumedLots        Json     
-  manufacturedDate    DateTime @default(now())
-
-  order               ProductionOrder     @relation(fields: [productionOrderId], references: [id])
-  qaLogs              QualityControlLog[]
-}
-
-enum QaStatus {
-  QUARANTINE
-  APPROVED
-  REJECTED
-}
-
-model QualityControlLog {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  productionLotId     String   @db.Uuid
-  status              QaStatus @default(QUARANTINE)
-  resultsData         Json?    
-  analyzedByRef       String?  
-  createdAt           DateTime @default(now())
-
-  lot                 ProductionLot @relation(fields: [productionLotId], references: [id])
-}
-`;
-
-  if (id === 'docker') return `version: '3.8'
-
-services:
-  # -----------------------------------
-  # 1. Banco de Dados Base (PostgreSQL)
-  # -----------------------------------
-  postgres:
-    image: postgres:15-alpine
-    container_name: hotechann-db
-    restart: always
-    environment:
-      POSTGRES_USER: \${DB_USER:-hotechann}
-      POSTGRES_PASSWORD: \${DB_PASS:-secret123}
-      POSTGRES_DB: \${DB_NAME:-hotechann_prod}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hotechann -d hotechann_prod"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # -----------------------------------
-  # 2. API Backend (NestJS)
-  # -----------------------------------
-  api:
-    build:
-      context: .
-      dockerfile: ./apps/api/Dockerfile
-    container_name: hotechann-api
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://\${DB_USER:-hotechann}:\${DB_PASS:-secret123}@postgres:5432/\${DB_NAME:-hotechann_prod}?schema=public
-      PORT: 3001
-    ports:
-      - "3001:3001"
-
-  # -----------------------------------
-  # 3. Painel Admin / ERP (Next.js)
-  # -----------------------------------
-  admin:
-    build:
-      context: .
-      dockerfile: ./apps/admin/Dockerfile
-    container_name: hotechann-admin
-    restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
-      PORT: 3000
-    ports:
-      - "3000:3000"
-
-  # -----------------------------------
-  # 4. Middleware & ETL (N8N)
-  # -----------------------------------
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: hotechann-n8n
-    restart: always
-    environment:
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_DATABASE=\${DB_NAME:-hotechann_prod}
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_USER=\${DB_USER:-hotechann}
-      - DB_POSTGRESDB_PASSWORD=\${DB_PASS:-secret123}
-      - N8N_DIAGNOSTICS_ENABLED=false
-      - WEBHOOK_URL=https://n8n.seusistema.com.br/
-    ports:
-      - "5678:5678"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - n8n_data:/home/node/.n8n
-
-volumes:
-  postgres_data:
-  n8n_data:
-`;
-
-  if (id === 'env') return `# -------------------------------------------------------------
-# ARQUIVO DE CONFIGURAÇÃO DE AMBIENTE (.ENV.EXAMPLE)
-# -------------------------------------------------------------
-
-# --- Configurações Cloud Run / AI Studio (Padrão) ---
-GEMINI_API_KEY="seu-token-gemini-aqui"
-APP_URL="http://localhost:3000"
-
-# --- Configurações de Banco de Dados ---
-DB_USER="hotechann"
-DB_PASS="secretR00tP4ssw0rd!"
-DB_NAME="hotechann_prod"
-# Prisma URL que será consumida pelo NestJS e N8N
-DATABASE_URL="postgresql://\${DB_USER}:\${DB_PASS}@localhost:5432/\${DB_NAME}?schema=public"
-
-# --- Configurações Web / Next.js ---
-NEXT_PUBLIC_API_URL="http://localhost:3001"
-NEXT_PUBLIC_COMPANY_NAME="Hotechann Faz"
-
-# --- Integrações Internas ---
-# Chaves usadas para autorizar o N8N a chamar rotas do NestJS de forma privada
-INTERNAL_API_SECRET="gerar_um_hash_aleatorio_seguro"
-N8N_BASIC_AUTH_USER="admin"
-N8N_BASIC_AUTH_PASSWORD="n8n_password_forte"
-
-# --- Chaves Futuras (Apenas placeholders) ---
-# TECNICON_ODBC_DSN=""
-# WHATSAPP_EVOLUTION_API_KEY=""
-`;
-  return '';
+      <pre className="p-4 bg-[#0A0A0A] border border-[#333] rounded-xl text-[13px] font-mono text-green-400 overflow-x-auto leading-relaxed">
+{`{
+  "name": "suggest_mrp_substitution",
+  "description": "Sugerir substituição de matéria-prima quando o estoque está abaixo do mínimo exigido (Necessidade Bruta ID).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "shortfallProductSku": { 
+        "type": "string", 
+        "description": "SKU da matéria-prima original faltante" 
+      },
+      "substituteProductSku": { 
+        "type": "string", 
+        "description": "SKU do material homologado sugerido como substituta garantida" 
+      },
+      "conversionFactorApplied": { 
+        "type": "number", 
+        "description": "Fator de multiplicador para equalizar o rendimento químico (Ex: 1.15)" 
+      },
+      "chemicalReasoning": { 
+        "type": "string", 
+        "description": "Breve justificativa físico-química ou de estoque do por que o lote ainda será válido." 
+      }
+    },
+    "required": [
+      "shortfallProductSku", 
+      "substituteProductSku", 
+      "conversionFactorApplied", 
+      "chemicalReasoning"
+    ]
+  }
+}`}
+      </pre>
+      
+      <div className="p-4 bg-[#1F1F15] rounded border border-yellow-600/50 mt-4">
+        <h4 className="text-yellow-500 font-bold text-sm mb-1">Para o Dev Node.js (Claude):</h4>
+        <p className="text-[#D0D0D0] text-xs">O schema acima deve ser modelado no Zod/DTO no Controller de <code>/mrp/requirements</code>. Envia o prompt em caso de "Not Enough Stock", captura esse Type e despacha a requisição pro React Admin validar.</p>
+      </div>
+    </div>
+  );
 }
