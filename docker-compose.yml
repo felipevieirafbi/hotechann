@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # -----------------------------------
+  # 1. Banco de Dados Base (PostgreSQL)
+  # -----------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: hotechann-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-hotechann}
+      POSTGRES_PASSWORD: ${DB_PASS:-secret123}
+      POSTGRES_DB: ${DB_NAME:-hotechann_prod}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotechann -d hotechann_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -----------------------------------
+  # 2. API Backend (NestJS)
+  # -----------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: hotechann-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-hotechann}:${DB_PASS:-secret123}@postgres:5432/${DB_NAME:-hotechann_prod}?schema=public
+      PORT: 3001
+    ports:
+      - "3001:3001"
+
+  # -----------------------------------
+  # 3. Painel Admin / ERP (Next.js)
+  # -----------------------------------
+  admin:
+    build:
+      context: .
+      dockerfile: ./apps/admin/Dockerfile
+    container_name: hotechann-admin
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+  # -----------------------------------
+  # 4. Middleware & ETL (N8N)
+  # -----------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: hotechann-n8n
+    restart: always
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=${DB_NAME:-hotechann_prod} # Compartilhando mesmo banco para facilitar gestão
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=${DB_USER:-hotechann}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASS:-secret123}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - WEBHOOK_URL=https://n8n.seusistema.com.br/
+    ports:
+      - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  postgres_data:
+  n8n_data:

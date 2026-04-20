@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------
+// 1. Catálogo e Produtos
+// -----------------------------------------
+
+enum ProductType {
+  FINISHED_GOOD // Produto Acabado (PA)
+  RAW_MATERIAL  // Matéria-Prima (MP)
+  PACKAGING     // Embalagem
+}
+
+model Product {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sku         String      @unique
+  name        String
+  description String?
+  type        ProductType
+  unit        String      @default("L") // L, KG, UN
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relacionamentos
+  formulasAsOutput    BomFormula[]      @relation("FinishedGood")
+  itemsAsComponent    BomItem[]         @relation("RawMaterial")
+  substitutes         BomSubstitution[] @relation("SubstituteMaterial")
+  stockMovements      StockMovement[]
+}
+
+// -----------------------------------------
+// 2. Engenharia: Bill of Materials (BOM)
+// -----------------------------------------
+
+model BomFormula {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId      String   @db.Uuid
+  baseYieldQty   Decimal  @db.Decimal(10, 2) // Ex: Rende 1000 Litros
+  version        String   @default("1.0")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relacionamentos
+  product        Product           @relation("FinishedGood", fields: [productId], references: [id])
+  items          BomItem[]
+  orders         ProductionOrder[]
+}
+
+model BomItem {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bomId          String   @db.Uuid
+  rawMaterialId  String   @db.Uuid
+  requiredQty    Decimal  @db.Decimal(10, 4) // Quantidade para atingir o baseYieldQty
+
+  // Relacionamentos
+  bomFormula     BomFormula        @relation(fields: [bomId], references: [id])
+  rawMaterial    Product           @relation("RawMaterial", fields: [rawMaterialId], references: [id])
+  substitutions  BomSubstitution[]
+}
+
+model BomSubstitution {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bomItemId            String   @db.Uuid
+  substituteMaterialId String   @db.Uuid
+  conversionFactor     Decimal  @default(1.0) @db.Decimal(10, 4) // Ex: 1.2x (Custa mais da fragrância B para dar o mesmo efeito)
+  aiPreferenceScore    Int      @default(50) // 0-100: Quão recomendada é essa substituição pelo químico
+
+  // Relacionamentos
+  bomItem              BomItem  @relation(fields: [bomItemId], references: [id])
+  substituteMaterial   Product  @relation("SubstituteMaterial", fields: [substituteMaterialId], references: [id])
+}
+
+// -----------------------------------------
+// 3. Estoque e Movimentação
+// -----------------------------------------
+
+enum MovementType {
+  IN_PURCHASE
+  IN_PRODUCTION
+  OUT_PRODUCTION
+  OUT_SALE
+  ADJUSTMENT
+}
+
+model StockMovement {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId      String       @db.Uuid
+  warehouseId    String       // Identificador do Almoxarifado
+  type           MovementType
+  quantity       Decimal      @db.Decimal(10, 4)
+  lotCode        String?      // Rastreabilidade por Lote
+  documentRef    String?      // Referência à OC do ERP Tecnicon
+
+  createdAt      DateTime     @default(now())
+  
+  product        Product      @relation(fields: [productId], references: [id])
+}
+
+// -----------------------------------------
+// 4. Produção (MRP), Traceabilidade e QA
+// -----------------------------------------
+
+enum OrderStatus {
+  PLANNED
+  IN_PROGRESS
+  AWAITING_QA // Em Quarentena
+  COMPLETED
+  CANCELED
+}
+
+model ProductionOrder {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bomId          String      @db.Uuid
+  status         OrderStatus @default(PLANNED)
+  plannedQty     Decimal     @db.Decimal(10, 2)
+  actualQty      Decimal?    @db.Decimal(10, 2)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  bomFormula     BomFormula  @relation(fields: [bomId], references: [id])
+  lots           ProductionLot[]
+}
+
+model ProductionLot {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productionOrderId   String   @db.Uuid
+  finalLotCode        String   @unique // Lote gerado Ex: HT2610
+  consumedLots        Json     // JSONB rastreando array de lotes-filhos consumidos ["RC05", "MP02"]
+  manufacturedDate    DateTime @default(now())
+
+  order               ProductionOrder     @relation(fields: [productionOrderId], references: [id])
+  qaLogs              QualityControlLog[]
+}
+
+enum QaStatus {
+  QUARANTINE
+  APPROVED
+  REJECTED
+}
+
+model QualityControlLog {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productionLotId     String   @db.Uuid
+  status              QaStatus @default(QUARANTINE)
+  resultsData         Json?    // JSONB com aferições (pH, Viscosidade, Cor)
+  analyzedByRef       String?  // Usuário do laboratório
+  createdAt           DateTime @default(now())
+
+  lot                 ProductionLot @relation(fields: [productionLotId], references: [id])
+}
