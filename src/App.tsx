@@ -386,13 +386,4 @@ N8N_BASIC_AUTH_PASSWORD="n8n_password_forte"
 # WHATSAPP_EVOLUTION_API_KEY=""
 `;
   return '';
-}-1.5 flex-shrink-0"></div>
-               {item}
-             </li>
-           ))}
-         </ul>
-      </div>
-    </div>
-  );
 }
-
