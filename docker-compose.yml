@@ -1,29 +1,55 @@
-version: '3.8'
+# Hotechann Satélite — Stack local/VPS
+# MVP 1: postgres + api + admin + web + n8n
+# Obs: N8N roda em banco próprio (n8n_db) para não colidir com o schema da app.
+#      Em produção, colocar Traefik/Nginx na frente para HTTPS.
 
 services:
   # -----------------------------------
-  # 1. Banco de Dados Base (PostgreSQL)
+  # 1. Banco de Dados da Aplicação
   # -----------------------------------
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: hotechann-db
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER:-hotechann}
-      POSTGRES_PASSWORD: ${DB_PASS:-secret123}
-      POSTGRES_DB: ${DB_NAME:-hotechann_prod}
+      POSTGRES_PASSWORD: ${DB_PASS:-change_me}
+      POSTGRES_DB: ${DB_NAME:-hotechann_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hotechann -d hotechann_prod"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hotechann} -d ${DB_NAME:-hotechann_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - hotechann
 
   # -----------------------------------
-  # 2. API Backend (NestJS)
+  # 2. Banco dedicado ao N8N (isolado)
+  # -----------------------------------
+  n8n_db:
+    image: postgres:16-alpine
+    container_name: hotechann-n8n-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${N8N_DB_USER:-n8n}
+      POSTGRES_PASSWORD: ${N8N_DB_PASS:-n8n_change_me}
+      POSTGRES_DB: ${N8N_DB_NAME:-n8n}
+    volumes:
+      - n8n_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${N8N_DB_USER:-n8n} -d ${N8N_DB_NAME:-n8n}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hotechann
+
+  # -----------------------------------
+  # 3. API Backend (NestJS)
   # -----------------------------------
   api:
     build:
@@ -35,13 +61,17 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-hotechann}:${DB_PASS:-secret123}@postgres:5432/${DB_NAME:-hotechann_prod}?schema=public
+      DATABASE_URL: postgresql://${DB_USER:-hotechann}:${DB_PASS:-change_me}@postgres:5432/${DB_NAME:-hotechann_db}?schema=public
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-dev_secret_change_me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       PORT: 3001
     ports:
       - "3001:3001"
+    networks:
+      - hotechann
 
   # -----------------------------------
-  # 3. Painel Admin / ERP (Next.js)
+  # 4. Painel Admin / ERP (Next.js)
   # -----------------------------------
   admin:
     build:
@@ -49,36 +79,72 @@ services:
       dockerfile: ./apps/admin/Dockerfile
     container_name: hotechann-admin
     restart: unless-stopped
+    depends_on:
+      - api
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_COMPANY_NAME: ${NEXT_PUBLIC_COMPANY_NAME:-Hotechann Faz}
       PORT: 3000
     ports:
       - "3000:3000"
+    networks:
+      - hotechann
 
   # -----------------------------------
-  # 4. Middleware & ETL (N8N)
+  # 5. E-commerce B2B/B2C (Next.js)
+  # -----------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    container_name: hotechann-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_COMPANY_NAME: ${NEXT_PUBLIC_COMPANY_NAME:-Hotechann Faz}
+      PORT: 3001
+    ports:
+      - "3003:3001"
+    networks:
+      - hotechann
+
+  # -----------------------------------
+  # 6. Middleware & ETL (N8N)
   # -----------------------------------
   n8n:
     image: n8nio/n8n:latest
     container_name: hotechann-n8n
     restart: always
+    depends_on:
+      n8n_db:
+        condition: service_healthy
     environment:
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_DATABASE=${DB_NAME:-hotechann_prod} # Compartilhando mesmo banco para facilitar gestão
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_USER=${DB_USER:-hotechann}
-      - DB_POSTGRESDB_PASSWORD=${DB_PASS:-secret123}
-      - N8N_DIAGNOSTICS_ENABLED=false
-      - WEBHOOK_URL=https://n8n.seusistema.com.br/
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n_db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER:-n8n}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASS:-n8n_change_me}
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-change_me}
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: America/Sao_Paulo
     ports:
       - "5678:5678"
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
       - n8n_data:/home/node/.n8n
+    networks:
+      - hotechann
+
+networks:
+  hotechann:
+    driver: bridge
 
 volumes:
   postgres_data:
+  n8n_db_data:
   n8n_data:

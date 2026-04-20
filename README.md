@@ -1,20 +1,84 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Hotechann Satélite
 
-# Run and deploy your AI Studio app
+Sistema operacional integrado ao ERP Tecnicon para a fábrica de produtos de
+limpeza **Hotechann Faz**. Cobre cadastros, estoque, BOM/MRP com IA, produção
+com QA bloqueante, e-commerce B2B, CRM Kanban e BI.
 
-This contains everything you need to run your app locally.
+## Estrutura do monorepo
 
-View your app in AI Studio: https://ai.studio/apps/2a4565ca-1a02-4b4b-ac64-61db179ecb52
+```
+hotechann/
+├── apps/
+│   ├── api/       → NestJS (backend + Prisma)
+│   ├── admin/     → Next.js (painel ERP/MRP/CRM interno)
+│   ├── web/       → Next.js (e-commerce B2B público)
+│   └── sad/       → Vite/React (Software Architecture Document interativo)
+├── packages/
+│   └── database/  → Prisma schema + client compartilhado
+├── docker-compose.yml
+├── turbo.json
+└── pnpm-workspace.yaml
+```
 
-## Run Locally
+## Stack
 
-**Prerequisites:**  Node.js
+- **Monorepo:** Turborepo + pnpm workspaces
+- **Backend:** NestJS 10 + TypeScript
+- **ORM:** Prisma + PostgreSQL 16
+- **Frontend:** Next.js 15 (App Router) + TailwindCSS
+- **Mensageria/ETL:** N8N (banco próprio isolado)
+- **IA:** Google Gemini (Function Calling para MRP e substituições)
 
+## Pré-requisitos
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- Node.js ≥ 20
+- pnpm ≥ 9 (`corepack enable && corepack use pnpm@latest`)
+- Docker + Docker Compose (para o stack local)
+
+## Setup inicial
+
+```bash
+# 1. Instalar dependências
+pnpm install
+
+# 2. Copiar e ajustar variáveis
+cp .env.example .env
+
+# 3. Subir o stack Docker (Postgres + API + Admin + Web + N8N)
+docker compose up -d
+
+# 4. Gerar o Prisma Client e rodar migrations
+pnpm db:generate
+pnpm db:migrate
+
+# 5. Iniciar em modo dev (todos os apps em paralelo)
+pnpm dev
+```
+
+## Portas padrão
+
+| Serviço         | URL                       |
+|-----------------|---------------------------|
+| Admin (ERP)     | http://localhost:3000     |
+| API (NestJS)    | http://localhost:3001/api |
+| E-commerce Web  | http://localhost:3003     |
+| SAD Dashboard   | http://localhost:3002     |
+| N8N             | http://localhost:5678     |
+| Postgres (app)  | localhost:5432            |
+
+## Scripts úteis
+
+```bash
+pnpm dev              # todos os apps em watch
+pnpm build            # build completo via turbo
+pnpm typecheck        # type-check em todos os pacotes
+pnpm db:studio        # abre o Prisma Studio
+pnpm db:push          # aplica o schema (sem migrations)
+pnpm db:migrate       # cria uma migration
+```
+
+## Branches
+
+- `main` — produção
+- `claude/*` — branches de análise/iteração com Claude
+- `feature/*` — desenvolvimento de features
