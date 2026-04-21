@@ -1,107 +1,243 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Bot, CheckCircle2 } from 'lucide-react';
+import { collection, setDoc, doc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { Factory, UploadCloud, AlertCircle, CheckCircle2, FlaskConical } from 'lucide-react';
+
+const BOM_DATA = [
+  {
+    productName: "Detergente Neutro FAZ",
+    productSlug: "detergente-neutro-faz",
+    baseYieldQty: 1000,
+    unit: "L",
+    isActive: true,
+    items: [
+      { materialId: "mp-acid-sulf", requiredQty: 150 },
+      { materialId: "mp-amida", requiredQty: 50 },
+      { materialId: "mp-essflo-a", requiredQty: 15, substituteId: "mp-essflo-b", conversionFactor: 1.2 },
+      { materialId: "mp-cloreto", requiredQty: 20 },
+      { materialId: "mp-agua", requiredQty: 800 }
+    ]
+  },
+  {
+    productName: "Desinfetante Lavanda FAZ",
+    productSlug: "desinfetante-lavanda-faz",
+    baseYieldQty: 1000,
+    unit: "L",
+    isActive: true,
+    items: [
+      { materialId: "mp-essflo-a", requiredQty: 20 },
+      { materialId: "mp-lauril", requiredQty: 30 },
+      { materialId: "mp-agua", requiredQty: 900 }
+    ]
+  },
+  {
+    productName: "Água Sanitária FAZ",
+    productSlug: "agua-sanitaria-faz",
+    baseYieldQty: 1000,
+    unit: "L",
+    isActive: true,
+    items: [
+      { materialId: "mp-hipocl", requiredQty: 400 },
+      { materialId: "mp-naoh", requiredQty: 10 },
+      { materialId: "mp-agua", requiredQty: 600 }
+    ]
+  }
+];
+
+const RAW_MATERIALS = [
+  { id: "mp-acid-sulf", name: "Ácido Sulfônico", unit: "KG" },
+  { id: "mp-amida", name: "Amida 60", unit: "KG" },
+  { id: "mp-essflo-a", name: "Essência Floral A", unit: "KG" },
+  { id: "mp-essflo-b", name: "Essência Floral B", unit: "KG" },
+  { id: "mp-cloreto", name: "Cloreto de Sódio", unit: "KG" },
+  { id: "mp-lauril", name: "Lauril Sulfato", unit: "KG" },
+  { id: "mp-agua", name: "Água Deionizada", unit: "L" },
+  { id: "mp-hipocl", name: "Hipoclorito Sódio 12%", unit: "L" },
+  { id: "mp-glicerina", name: "Glicerina", unit: "KG" },
+  { id: "mp-naoh", name: "Hidróxido de Sódio", unit: "KG" }
+];
+
+const STOCK_BALANCE = [
+  { id: "mp-acid-sulf", qty: 150 },
+  { id: "mp-amida", qty: 80 },
+  { id: "mp-essflo-a", qty: 3 }, // DEFICIT INTENCIONAL
+  { id: "mp-essflo-b", qty: 25 }, // SUBSTITUTO
+  { id: "mp-cloreto", qty: 200 },
+  { id: "mp-lauril", qty: 120 },
+  { id: "mp-agua", qty: 5000 },
+  { id: "mp-hipocl", qty: 500 },
+  { id: "mp-glicerina", qty: 40 },
+  { id: "mp-naoh", qty: 30 }
+];
 
 export function MrpPage() {
-  const [activeTab, setActiveTab] = useState<'mrp' | 'bom'>('mrp');
+  const [selectedSlug, setSelectedSlug] = useState('detergente-neutro-faz');
+  const [quantity, setQuantity] = useState(1000);
+  const [mrpResult, setMrpResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedData = async () => {
+    setSeeding(true);
+    try {
+      for (const item of RAW_MATERIALS) {
+        await setDoc(doc(db, 'raw_materials', item.id), item);
+      }
+      for (const item of STOCK_BALANCE) {
+        await setDoc(doc(db, 'stock_balance', item.id), item);
+      }
+      for (const item of BOM_DATA) {
+        await setDoc(doc(db, 'bom_formulas', item.productSlug), item);
+      }
+      alert("Sucesso! Banco de Produtividade atualizado com dados estáticos.");
+    } catch (e: any) {
+      alert("Erro ao seedar: " + e.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const calculateMrp = async () => {
+    setLoading(true);
+    setMrpResult(null);
+    try {
+      const response = await fetch('/api/mrp/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productSlug: selectedSlug, quantity })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setMrpResult(data);
+    } catch (error: any) {
+      alert("Erro ao calcular: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="h-full flex flex-col max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+    <div className="space-y-6 max-w-5xl">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 mb-3 shadow-sm">
-            Core Engine (Satélite)
-          </div>
-          <h2 className="text-3xl font-black text-[#11244A] tracking-tight">Engenharia e Produção (PCP)</h2>
-          <p className="text-slate-500 font-medium max-w-2xl mt-2 leading-relaxed">
-            Painel do motor MRP. Exibe relatórios de déficit baseados nos pedidos pendentes e gestão de componentes de substituição para Lotes via Engenharia.
-          </p>
+          <h2 className="text-2xl font-black text-[#11244A] tracking-tight">Engenharia Química (MRP)</h2>
+          <p className="text-sm text-slate-500 font-medium mt-1">Cálculos de batelada, análise de gargalos e check de matéria-prima (IA).</p>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 mb-6 font-bold text-sm">
         <button 
-          onClick={() => setActiveTab('mrp')}
-          className={`pb-4 px-6 transition-colors border-b-2 ${activeTab === 'mrp' ? 'border-[#11244A] text-[#11244A]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+          onClick={handleSeedData}
+          disabled={seeding}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2"
         >
-          Planejamento de Materiais (MRP)
-        </button>
-        <button 
-          onClick={() => setActiveTab('bom')}
-          className={`pb-4 px-6 transition-colors border-b-2 ${activeTab === 'bom' ? 'border-[#11244A] text-[#11244A]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-        >
-          Gestão de Fórmulas (BOM)
+          <UploadCloud className="w-4 h-4" /> 
+          {seeding ? 'Enviando...' : 'Importar BOM e Estoques (Seeding)'}
         </button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'mrp' ? (
-           <div className="space-y-6">
-              {/* Alerta de Deficit simulando o que fizemos na API */}
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm">
-                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-red-100 flex items-center justify-center flex-shrink-0 shadow-sm">
-                       <AlertTriangle className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div className="flex-1">
-                       <div className="flex justify-between items-start">
-                         <div>
-                            <h3 className="text-red-700 font-black text-lg tracking-tight mb-1">Déficit Crítico de Componente Detectado</h3>
-                            <p className="text-red-600/80 text-sm font-medium">A Ordem de Produção <strong className="text-red-700 font-bold">#OP-9011 (Detergente Neutro)</strong> está travada por falta de estoque.</p>
-                         </div>
-                         <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-1 rounded">Hoje, 09:12</span>
-                       </div>
-                       
-                       <div className="mt-5 p-4 bg-white/60 border border-red-100 rounded-xl space-y-3">
-                         <div className="flex items-center justify-between text-sm">
-                           <span className="text-slate-600 font-bold">Material:</span>
-                           <span className="text-[#11244A] font-bold">Essência Floral FAZ ("ESSFLO-A")</span>
-                         </div>
-                         <div className="flex items-center justify-between text-sm">
-                           <span className="text-slate-600 font-bold">Necessidade para a O.P.:</span>
-                           <span className="text-slate-700">20.0 Kg</span>
-                         </div>
-                         <div className="flex items-center justify-between text-sm">
-                           <span className="text-slate-600 font-bold">Estoque Físico Atual:</span>
-                           <span className="text-red-600 font-black">5.0 Kg <span className="font-medium text-xs">(Falta: 15.0 Kg)</span></span>
-                         </div>
-                       </div>
-                    </div>
-                 </div>
-              </div>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+         <div className="flex gap-4 items-end">
+            <div className="flex-1">
+               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Fórmula Base (Produto)</label>
+               <select 
+                 className="w-full bg-slate-50 border border-slate-200 text-[#11244A] text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-3 outline-none font-bold"
+                 value={selectedSlug} onChange={(e) => setSelectedSlug(e.target.value)}
+               >
+                 {BOM_DATA.map(b => (
+                   <option key={b.productSlug} value={b.productSlug}>{b.productName}</option>
+                 ))}
+               </select>
+            </div>
+            <div className="w-32">
+               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Qtd (Litros)</label>
+               <input 
+                 type="number" 
+                 className="w-full bg-slate-50 border border-slate-200 text-[#11244A] text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 p-3 outline-none font-bold"
+                 value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}
+               />
+            </div>
+            <button 
+              onClick={calculateMrp}
+              disabled={loading}
+              className="bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all h-[46px] flex items-center"
+            >
+              {loading ? 'Calculando...' : 'Calcular Necessidade'}
+            </button>
+         </div>
+      </div>
 
-              {/* Bot - Gemini Function Calling Simulation */}
-              <div className="bg-[#11244A] rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-col md:flex-row gap-6 items-center">
-                 <div className="absolute right-0 bottom-0 opacity-5 translate-x-1/4 translate-y-1/4 w-64 h-64">
-                   <Bot className="w-full h-full text-white" />
-                 </div>
-                 
-                 <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10 flex-shrink-0">
-                    <Bot className="w-8 h-8 text-orange-400" />
-                 </div>
-                 
-                 <div className="flex-1 relative z-10 text-white">
-                    <div className="inline-flex items-center gap-2 text-xs font-bold bg-orange-500 text-[#11244A] px-2.5 py-1 rounded mb-3 shadow-[0_0_15px_rgba(249,115,22,0.4)]">
-                      ✨ MOTOR SUBSTITUTIVO (IA)
-                    </div>
-                    <p className="text-sm text-blue-100 leading-relaxed font-medium mb-4">
-                      Detectei que você precisa rodar a <b>OP-9011</b>, mas falta <span className="font-bold underline decoration-orange-400">ESSFLO-A</span>.
-                      <br/>No modelo de dados <code className="text-xs bg-black/30 px-1 rounded mx-1">bom_substitutions</code>, encontrei que o componente alternativo <span className="font-bold text-orange-400">ESSFLO-C</span> possui estoques suficientes em Tecnicon (300 Kg) para cobrir isso, e é compatível com Detergentes na proporção 1:1.
-                    </p>
-                    <button className="bg-white text-[#11244A] px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-slate-100 transition-colors flex items-center gap-2">
-                       <CheckCircle2 className="w-4 h-4 text-emerald-500" /> APROVAR SUBSTITUIÇÃO E LIBERAR O.P.
-                    </button>
-                 </div>
+      {mrpResult && (
+        <div className="space-y-6">
+           <div className={`p-4 rounded-xl flex items-center gap-3 border shadow-sm ${mrpResult.feasible ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
+              {mrpResult.feasible ? <CheckCircle2 className="w-8 h-8 opacity-80" /> : <AlertCircle className="w-8 h-8 opacity-80" />}
+              <div>
+                 <h3 className="text-lg font-black">{mrpResult.feasible ? 'Batelada 100% Viável' : 'Alerta de Inviabilidade: Faltam MP'}</h3>
+                 <p className="text-sm font-medium opacity-90">{mrpResult.feasible ? 'O estoque atual cobre todas as necessidades da fórmula requerida.' : 'Foram encontrados gargalos no estoque de matérias-primas críticas. Cheque os laudos substitutivos.'}</p>
               </div>
-
            </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center text-slate-500">
-             Lista de estruturas de produto (Bill of Materials) aparecerá aqui.
-          </div>
-        )}
-      </div>
+
+           <table className="w-full text-left bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+             <thead className="bg-slate-50 border-b border-slate-100">
+               <tr>
+                 <th className="p-4 text-xs font-bold text-slate-500 uppercase">Input Material</th>
+                 <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Necessário</th>
+                 <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Estoque Disp.</th>
+                 <th className="p-4 text-xs font-bold text-slate-500 uppercase text-center">Status</th>
+               </tr>
+             </thead>
+             <tbody className="text-sm divide-y divide-slate-100">
+                {mrpResult.items.map((i: any) => (
+                  <tr key={i.materialId} className={i.status === 'SHORTFALL' ? 'bg-red-50/50' : ''}>
+                    <td className="p-4 font-bold text-[#11244A]">{i.name} ({i.unit})</td>
+                    <td className="p-4 text-right font-semibold text-slate-600">{i.required.toFixed(2)}</td>
+                    <td className="p-4 text-right font-semibold text-slate-600">{i.available.toFixed(2)}</td>
+                    <td className="p-4 text-center">
+                       {i.status === 'OK' ? (
+                          <span className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded text-xs">OK</span>
+                       ) : (
+                          <span className="inline-block px-2 py-1 bg-red-100 text-red-700 font-bold rounded text-xs">DÉFICIT</span>
+                       )}
+                    </td>
+                  </tr>
+                ))}
+             </tbody>
+           </table>
+
+           {mrpResult.shortfalls.length > 0 && (
+             <div className="space-y-4">
+               <h3 className="text-xl font-black text-[#11244A] flex items-center gap-2">
+                 <FlaskConical className="w-6 h-6 text-orange-500" /> Relatório Mestre de Substituição (Gemini)
+               </h3>
+               {mrpResult.shortfalls.map((s: any) => (
+                 <div key={s.materialId} className="bg-white p-6 rounded-2xl shadow-sm border border-blue-200 border-l-4 border-l-blue-500 relative">
+                    <p className="text-xs font-bold text-blue-500 uppercase mb-2">ANÁLISE PARA O DÉFICIT DE: {s.name}</p>
+                    <p className="text-slate-600 mb-4 font-medium text-sm">Faltam <strong>{s.deficit.toFixed(2)} {s.unit}</strong> para compor o lote. Foi tentada a substituição por <strong>{s.substituteName}</strong>.</p>
+                    
+                    {s.aiSuggestion?.chemicalReasoning ? (
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 italic text-sm text-slate-700 relative">
+                         <span className="absolute -top-3 -right-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-1 font-bold rounded shadow-sm">AI STUDIO CHECKED</span>
+                         " {s.aiSuggestion.chemicalReasoning} "
+                         
+                         <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-6">
+                            <div>
+                               <span className="text-xs text-slate-400 font-bold uppercase">Substituto</span>
+                               <p className="font-bold text-[#11244A]">{s.aiSuggestion.substituteProductSku}</p>
+                            </div>
+                            <div>
+                               <span className="text-xs text-slate-400 font-bold uppercase">Fator de Conv.</span>
+                               <p className="font-bold text-emerald-600">{s.aiSuggestion.conversionFactorApplied}x</p>
+                            </div>
+                         </div>
+                      </div>
+                    ) : (
+                      <div className="text-red-500 text-sm font-bold bg-red-50 p-3 rounded">
+                        Erro ao buscar validação IA: {s.aiSuggestion?.error || 'Aguardando chave da API'}
+                      </div>
+                    )}
+                 </div>
+               ))}
+             </div>
+           )}
+        </div>
+      )}
     </div>
-  );
+  )
 }

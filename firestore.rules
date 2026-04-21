@@ -84,5 +84,20 @@ service cloud.firestore {
       allow update: if (isAdmin() || request.auth.uid == userId) && isValidId(userId) && isValidUser(incoming()) && (incoming().role == 'customer' || isAdmin());
       allow delete: if isAdmin();
     }
+
+    match /raw_materials/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /stock_balance/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /bom_formulas/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
