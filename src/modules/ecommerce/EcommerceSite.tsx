@@ -68,6 +68,33 @@ export function EcommerceSite({ onLogin, user }: { onLogin: () => void, user: Us
   };
 
   const renderProductVisual = (p: any) => {
+    // If we have a photo URL, we try to render the image
+    if (p.photoUrl) {
+       return (
+         <div className="w-16 h-20 relative group overflow-hidden rounded-md flex items-center justify-center">
+           <img 
+              src={p.photoUrl} 
+              alt={p.title} 
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              onError={(e) => {
+                 // Fallback if image fails to load
+                 e.currentTarget.style.display = 'none';
+                 const fallbackSvg = e.currentTarget.nextElementSibling as HTMLElement;
+                 if (fallbackSvg) fallbackSvg.style.display = 'block';
+              }}
+           />
+           <div style={{ display: 'none' }}>
+             {renderSvgFallback(p)}
+           </div>
+         </div>
+       );
+    }
+    
+    // Otherwise return the typical SVG
+    return renderSvgFallback(p);
+  };
+
+  const renderSvgFallback = (p: any) => {
     const isPote = p.sub.includes("1Kg");
     const isPump = p.tag === "Fortmaster";
     

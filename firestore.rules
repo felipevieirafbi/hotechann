@@ -34,7 +34,8 @@ service cloud.firestore {
         && data.sub is string && data.sub.size() <= 50
         && data.tag is string && data.tag.size() <= 50
         && data.color is string && data.color.size() <= 20
-        && data.createdAt is timestamp;
+        && data.createdAt is timestamp
+        && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 2000));
     }
 
     function isValidOrder(data) {
