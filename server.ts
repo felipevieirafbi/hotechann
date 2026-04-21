@@ -165,24 +165,25 @@ app.post('/api/mrp/calculate', async (req, res) => {
 
 // Start the server with Vite Integration
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
+  const customPort = process.env.PORT ? Number(process.env.PORT) + 1 : 3001;
+
+  if (process.env.NODE_ENV === 'production') {
     // production static
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server API + UI running on http://0.0.0.0:${PORT}`);
+    });
+  } else {
+    // Development mode listens on 3001
+    app.listen(customPort, '0.0.0.0', () => {
+      console.log(`Development API Server running on http://0.0.0.0:${customPort}`);
+    });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server API + UI running on http://0.0.0.0:${PORT}`);
-  });
 }
 
 startServer();

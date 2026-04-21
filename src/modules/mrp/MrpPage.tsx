@@ -76,9 +76,11 @@ export function MrpPage() {
   const [mrpResult, setMrpResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSeedData = async () => {
     setSeeding(true);
+    setNotification(null);
     try {
       for (const item of RAW_MATERIALS) {
         await setDoc(doc(db, 'raw_materials', item.id), item);
@@ -89,9 +91,11 @@ export function MrpPage() {
       for (const item of BOM_DATA) {
         await setDoc(doc(db, 'bom_formulas', item.productSlug), item);
       }
-      alert("Sucesso! Banco de Produtividade atualizado com dados estáticos.");
+      console.log('SEED:', 'success');
+      setNotification({ type: 'success', text: "Sucesso! Banco de Produtividade atualizado com dados estáticos." });
     } catch (e: any) {
-      alert("Erro ao seedar: " + e.message);
+      console.error('SEED ERROR:', e);
+      setNotification({ type: 'error', text: "Erro ao seedar: " + e.message });
     } finally {
       setSeeding(false);
     }
@@ -100,6 +104,7 @@ export function MrpPage() {
   const calculateMrp = async () => {
     setLoading(true);
     setMrpResult(null);
+    setNotification(null);
     try {
       const response = await fetch('/api/mrp/calculate', {
         method: 'POST',
@@ -110,7 +115,8 @@ export function MrpPage() {
       if (data.error) throw new Error(data.error);
       setMrpResult(data);
     } catch (error: any) {
-      alert("Erro ao calcular: " + error.message);
+      console.error('CALC ERROR:', error);
+      setNotification({ type: 'error', text: "Erro ao calcular: " + error.message });
     } finally {
       setLoading(false);
     }
@@ -132,6 +138,12 @@ export function MrpPage() {
           {seeding ? 'Enviando...' : 'Importar BOM e Estoques (Seeding)'}
         </button>
       </div>
+      
+      {notification && (
+        <div className={`p-4 rounded-xl text-sm font-bold ${notification.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+          {notification.text}
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
          <div className="flex gap-4 items-end">
