@@ -12,9 +12,18 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
-    function isAdmin() { 
-      return isSignedIn() && 
-      (request.auth.token.email == 'felipe.vieira.consultoria@gmail.com'); 
+    function isSuperUserEmail() {
+      return isSignedIn() && request.auth.token.email == 'felipe.vieira.consultoria@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isSuperUserEmail() ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        )
+      );
     }
 
     // Validation Helpers
