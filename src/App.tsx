@@ -297,7 +297,6 @@ function ErpDashboard({ onLogout, user }: { onLogout: () => void, user: UserProf
 
 import { UsersPage } from './modules/admin/UsersPage';
 import { ProductsPage } from './modules/admin/ProductsPage';
-import { getDoc } from 'firebase/firestore';
 import { ShopfloorPage } from './modules/shopfloor/ShopfloorPage';
 import { TecniconPage } from './modules/integration/TecniconPage';
 import { DownloadsPage } from './modules/downloads/DownloadsPage';

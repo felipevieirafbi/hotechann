@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import { GoogleGenAI, Type, Schema, FunctionCallingConfigMode } from '@google/genai';
 import path from 'path';
 import fetch from 'node-fetch'; // Polyfill or native node fetch
 import dotenv from 'dotenv';
@@ -43,10 +43,10 @@ const SUGGEST_SUBSTITUTION_DECLARATION = {
 
 // Helper to interact with the REST database since `firebase/firestore` is mostly for client
 async function fetchDocs(collectionId: string) {
-  const url = \`https://firestore.googleapis.com/v1/projects/\${FIREBASE_PROJECT}/databases/\${FIREBASE_DB}/documents/\${collectionId}\`;
+  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/${FIREBASE_DB}/documents/${collectionId}`;
   const response = await fetch(url);
-  if (!response.ok) throw new Error(\`Failed to fetch \${collectionId}\`);
-  const data = await response.json();
+  if (!response.ok) throw new Error(`Failed to fetch ${collectionId}`);
+  const data: any = await response.json();
   if (!data.documents) return [];
   
   return data.documents.map((doc: any) => {
@@ -130,14 +130,14 @@ app.post('/api/mrp/calculate', async (req, res) => {
           try {
              // Gemini Substitution Call
              const ai = getAi();
-             const prompt = \`Você é engenheiro químico especialista em produtos de limpeza. Para produzir \${quantity}L de "\${bom.productName}", falta \${deficit}\${resItem.unit} de "\${resItem.name}". Substituto disponível: "\${fallbackObj.substituteName}" (\${fallbackObj.substituteQty}\${resItem.unit} em estoque), fator de conversão \${item.conversionFactor}x. Use a função suggest_mrp_substitution para validar e justificar essa substituição em português.\`;
+             const prompt = `Você é engenheiro químico especialista em produtos de limpeza. Para produzir ${quantity}L de "${bom.productName}", falta ${deficit}${resItem.unit} de "${resItem.name}". Substituto disponível: "${fallbackObj.substituteName}" (${fallbackObj.substituteQty}${resItem.unit} em estoque), fator de conversão ${item.conversionFactor}x. Use a função suggest_mrp_substitution para validar e justifyicar essa substituição em português.`;
              
              const result = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 config: {
                   tools: [{ functionDeclarations: [SUGGEST_SUBSTITUTION_DECLARATION] }],
-                  toolConfig: { functionCallingConfig: { mode: 'ANY' } }
+                  toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY } }
                 }
              });
 
@@ -181,7 +181,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(\`Server API + UI running on http://0.0.0.0:\${PORT}\`);
+    console.log(`Server API + UI running on http://0.0.0.0:${PORT}`);
   });
 }
 
