@@ -117,8 +117,12 @@ export class GeminiService {
       }
 
       return fnCall.args as unknown as SuggestMrpSubstitutionPayload;
-    } catch (err) {
-      this.logger.error('Falha ao chamar Gemini', err as Error);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `Falha ao chamar Gemini: ${msg}`,
+        err instanceof Error ? err.stack : undefined,
+      );
       return null;
     }
   }

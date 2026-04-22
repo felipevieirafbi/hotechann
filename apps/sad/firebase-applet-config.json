@@ -1,0 +1,9 @@
+{
+  "apiKey": "REPLACE_WITH_REAL_VALUE",
+  "authDomain": "gen-lang-client-0327594030.firebaseapp.com",
+  "projectId": "gen-lang-client-0327594030",
+  "storageBucket": "gen-lang-client-0327594030.firebasestorage.app",
+  "messagingSenderId": "REPLACE_WITH_REAL_VALUE",
+  "appId": "REPLACE_WITH_REAL_VALUE",
+  "firestoreDatabaseId": "ai-studio-2a4565ca-1a02-4b4b-ac64-61db179ecb52"
+}
