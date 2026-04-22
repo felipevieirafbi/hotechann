@@ -2,16 +2,15 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type, Schema, FunctionCallingConfigMode } from '@google/genai';
 import path from 'path';
-import fetch from 'node-fetch'; // Polyfill or native node fetch
 import dotenv from 'dotenv';
 import firebaseConfig from './firebase-applet-config.json' assert { type: 'json' };
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 dotenv.config();
 
 const PORT = 3000;
-const FIREBASE_PROJECT = 'gen-lang-client-0327594030';
-const FIREBASE_DB = 'ai-studio-2a4565ca-1a02-4b4b-ac64-61db179ecb52';
-const FIREBASE_API_KEY = firebaseConfig.apiKey;
-// We'll use the native fetch connected to Firestore REST API
+const firebaseApp = initializeApp(firebaseConfig);
+const firestore = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 
 const app = express();
 app.use(express.json());
@@ -43,36 +42,12 @@ const SUGGEST_SUBSTITUTION_DECLARATION = {
   }
 } as any;
 
-// Helper to interact with the REST database since `firebase/firestore` is mostly for client
+// Helper to interact with the database
 async function fetchDocs(collectionId: string) {
-  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/${FIREBASE_DB}/documents/${collectionId}?key=${FIREBASE_API_KEY}`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to fetch ${collectionId}`);
-  const data: any = await response.json();
-  if (!data.documents) return [];
-  
-  return data.documents.map((doc: any) => {
-    // Basic extraction
-    const fields = doc.fields || {};
-    const parsed: any = { id: doc.name.split('/').pop() };
-    for (const [key, val] of Object.entries(fields)) {
-      const v = val as any;
-      parsed[key] = v.stringValue !== undefined ? v.stringValue :
-                    v.integerValue !== undefined ? parseInt(v.integerValue) :
-                    v.doubleValue !== undefined ? parseFloat(v.doubleValue) :
-                    v.booleanValue !== undefined ? v.booleanValue : null;
-      if (v.arrayValue) {
-        parsed[key] = v.arrayValue.values?.map((item: any) => {
-           const obj: any = {};
-           for (const [ik, iv] of Object.entries(item.mapValue.fields)) {
-              obj[ik] = (iv as any).stringValue || (iv as any).integerValue || (iv as any).doubleValue || null;
-           }
-           return obj;
-        });
-      }
-    }
-    return parsed;
-  });
+  const snapshot = await getDocs(collection(firestore, collectionId));
+  const docs: any[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  console.log(`[fetchDocs] ${collectionId} → ${docs.length} docs`);
+  return docs;
 }
 
 const dbCache = {
@@ -160,7 +135,8 @@ app.post('/api/mrp/calculate', async (req, res) => {
     res.json({ items: results, shortfalls, feasible });
 
   } catch (err: any) {
-    console.error("MRP Error", err);
+    console.error("MRP Error:", err.message);
+    console.error("Stack:", err.stack);
     res.status(500).json({ error: err.message });
   }
 });
