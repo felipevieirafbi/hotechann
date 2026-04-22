@@ -4,11 +4,13 @@ import { GoogleGenAI, Type, Schema, FunctionCallingConfigMode } from '@google/ge
 import path from 'path';
 import fetch from 'node-fetch'; // Polyfill or native node fetch
 import dotenv from 'dotenv';
+import firebaseConfig from './firebase-applet-config.json' assert { type: 'json' };
 dotenv.config();
 
 const PORT = 3000;
 const FIREBASE_PROJECT = 'gen-lang-client-0327594030';
 const FIREBASE_DB = 'ai-studio-2a4565ca-1a02-4b4b-ac64-61db179ecb52';
+const FIREBASE_API_KEY = firebaseConfig.apiKey;
 // We'll use the native fetch connected to Firestore REST API
 
 const app = express();
@@ -43,7 +45,7 @@ const SUGGEST_SUBSTITUTION_DECLARATION = {
 
 // Helper to interact with the REST database since `firebase/firestore` is mostly for client
 async function fetchDocs(collectionId: string) {
-  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/${FIREBASE_DB}/documents/${collectionId}`;
+  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/${FIREBASE_DB}/documents/${collectionId}?key=${FIREBASE_API_KEY}`;
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch ${collectionId}`);
   const data: any = await response.json();
