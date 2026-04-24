@@ -122,9 +122,10 @@ app.post('/api/mrp/calculate', async (req, res) => {
              if (call) {
                fallbackObj.aiSuggestion = call.args;
              }
-          } catch (aiErr) {
-             console.error("AI Substitution Check failed", aiErr);
-             fallbackObj.aiSuggestion = { error: "Não foi possível validar com a IA (Chave talvez não configurada)." };
+          } catch (aiErr: unknown) {
+             const msg = aiErr instanceof Error ? aiErr.message : String(aiErr);
+             console.error('AI Substitution Check failed:', msg, aiErr);
+             fallbackObj.aiSuggestion = { error: `Falha IA: ${msg}` };
           }
         }
         shortfalls.push(fallbackObj);
